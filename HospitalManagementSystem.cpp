@@ -25,8 +25,6 @@ public:
     int bill;
 
     void input() {
-        cout << "Enter ID: ";
-        cin >> id;
         cout << "Enter Name: ";
         cin >> name;
         cout << "Enter Disease: ";
@@ -44,8 +42,11 @@ public:
 
 Room rooms[5];
 Patient patients[100];
-int countP = 0;
 
+int countP = 0;
+int nextID = 1;
+
+// ================= FILE SAVE =================
 void saveToFile() {
     ofstream file("patients.txt");
     for(int i = 0; i < countP; i++) {
@@ -58,16 +59,25 @@ void saveToFile() {
     file.close();
 }
 
+// ================= FILE LOAD =================
 void loadFromFile() {
     ifstream file("patients.txt");
+
     while(file >> patients[countP].id >> patients[countP].name 
           >> patients[countP].disease >> patients[countP].roomNo 
           >> patients[countP].bill) {
+
+        // next ID update (IMPORTANT)
+        if(patients[countP].id >= nextID) {
+            nextID = patients[countP].id + 1;
+        }
+
         countP++;
     }
     file.close();
 }
 
+// ================= ROOM ASSIGN =================
 int assignRoom(string type) {
     for(int i = 0; i < 5; i++) {
         if(!rooms[i].occupied && rooms[i].type == type) {
@@ -78,6 +88,7 @@ int assignRoom(string type) {
     return -1;
 }
 
+// ================= DISCHARGE =================
 void dischargePatient() {
     int id;
     cout << "Enter Patient ID to discharge: ";
@@ -93,12 +104,14 @@ void dischargePatient() {
                 }
             }
 
-            cout << "\nPatient discharged!\nFinal Bill: Rs." << patients[i].bill << endl;
+            cout << "\nPatient discharged!";
+            cout << "\nFinal Bill: Rs." << patients[i].bill << endl;
 
-            
+            // remove patient
             for(int k = i; k < countP - 1; k++) {
                 patients[k] = patients[k + 1];
             }
+
             countP--;
             return;
         }
@@ -107,6 +120,7 @@ void dischargePatient() {
     cout << "Patient not found!\n";
 }
 
+// ================= SEARCH =================
 void searchPatient() {
     int id;
     cout << "Enter ID: ";
@@ -122,10 +136,22 @@ void searchPatient() {
     cout << "Not found!\n";
 }
 
+// ================= SHOW ALL =================
+void showPatients() {
+    if(countP == 0) {
+        cout << "No patients available!\n";
+        return;
+    }
 
+    for(int i = 0; i < countP; i++) {
+        patients[i].display();
+    }
+}
+
+// ================= MAIN =================
 int main() {
 
-    // rooms setup
+    // Room setup
     rooms[0].setRoom(101, "General");
     rooms[1].setRoom(102, "General");
     rooms[2].setRoom(201, "ICU");
@@ -158,28 +184,37 @@ int main() {
                 cout << "Room Type (ICU/General): ";
                 cin >> type;
 
+                // normalize input
+                if(type == "icu") type = "ICU";
+                if(type == "general") type = "General";
+
+                // validation
+                if(type != "ICU" && type != "General") {
+                    cout << "Invalid room type!\n";
+                    break;
+                }
+
                 int room = assignRoom(type);
 
                 if(room == -1) {
                     cout << "No room available!\n";
                 } else {
+                    p.id = nextID++;   // 🔥 AUTO ID
                     p.roomNo = room;
 
-                    // Billing
                     if(type == "ICU") p.bill = 5000;
                     else p.bill = 2000;
 
                     patients[countP++] = p;
 
-                    cout << "Patient admitted! Room No: " << room << endl;
+                    cout << "\nPatient admitted!";
+                    cout << "\nID: " << p.id << " | Room No: " << room << endl;
                 }
                 break;
             }
 
             case 2:
-                for(int i = 0; i < countP; i++) {
-                    patients[i].display();
-                }
+                showPatients();
                 break;
 
             case 3:
@@ -201,7 +236,7 @@ int main() {
                 break;
 
             default:
-                cout << "Invalid!\n";
+                cout << "Invalid choice!\n";
         }
 
     } while(choice != 6);
